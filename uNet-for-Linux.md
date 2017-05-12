@@ -233,3 +233,41 @@ set -x
 ```
 
 All of the scripts must be run from the `~/poky_sdk` directory we've installed yocto earlier.
+
+## Running QEMU uNet images
+
+Assuming the installation of the yocto binaries, the compilation of the kernel and the setup of `br0` bridge is complete, open two terminal instances and in both issue:
+
+```
+$ cd ~/poky_sdk
+$ . environment-setup-core2-64-poky-linux
+```
+
+Run qemu on terminal #1 using:
+```
+$ ./run-tap.sh 1
+```
+
+And terminal #2 using:
+```
+$ ./run-tap.sh 2
+```
+
+You should get a long prompt at both terminals, the first one `qemux86-64-john` and the other `qemux86-64-alice`. John and Alice are the names of the entities we're going to create in each instance.
+
+Log in using root at both.
+
+Verify that the following files exist in instance #1:
+```
+root@qemux86-64-john:~# ls ca.cert.der intermediate.cert.der unet-john.cert.der unet-john.key.pkcs8.der 
+ca.cert.der              intermediate.cert.der    unet-john.cert.der       unet-john.key.pkcs8.der
+```
+
+Similarly for instance #2:
+```
+root@qemux86-64-alice:~# ls ca.cert.der intermediate.cert.der unet-alice.cert.der unet-alice.key.pkcs8.der 
+ca.cert.der               intermediate.cert.der     unet-alice.cert.der       unet-alice.key.pkcs8.der
+```
+
+
+
