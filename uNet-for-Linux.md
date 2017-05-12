@@ -657,9 +657,83 @@ int main(int argc, char *argv[])
 }
 ```
 
+Note how similar to a standard UDP based application the source code is, that is the main point of the socket API interface.
+
 Go to the terminal of instance #1 and enable the `app.chat` endpoint (in the current uNet security model applications do not have rights to create application endpoints).
 
 ```
 root@qemux86-64-john:~# mkdir /config/unet/apps/app.chat
 root@qemux86-64-john:~# echo 1 >/config/unet/apps/app.chat/enable 
+```
+
+Start `unet-chat` in server mode
+
+```
+root@qemux86-64-john:~# unet-chat 
+server binding to 'app.chat'
+Welcome to unet-chat; listening for clients in '0.123456:app.chat'
+0.123456:app.chat > 
+```
+
+Go to instance #2 and start `unet-chat` in client mode.
+
+```
+root@qemux86-64-alice:~# unet-chat 0.123456
+Welcome to unet-chat; using server '0.123456:app.chat'
+1.abcdef0:#.0 > 
+```
+
+Typing in one instance now results in output generated at the other.
+Use Ctrl-C to exit.
+
+If you have debugging enabled you will note that every packet exchange is encrypted as it should.
+
+## uNet IP bridging
+
+It is possible to configure a point to point IP link over unet. This requires a [unet enabled iproute2](https://github.com/pantoniou/iproute2/tree/unet)
+
+On instance #1 issue:
+
+```
+root@qemux86-64-john:~# ip link add name unet0 type unet local-entity 0.123456 remote-entity 1.abcdef0
+root@qemux86-64-john:~# ip link set dev unet0 up
+root@qemux86-64-john:~# ip route add 10.10.0.0/16 dev unet0
+root@qemux86-64-john:~# ip address add 10.11.0.1/16 dev eth0
+```
+
+This creates a tunneling unet0 interface, installs a route at it (10.10.0.0/16) which also adding an alias address (10.11.0.1/16) on eth0.
+
+On instance #2 issue:
+
+```
+root@qemux86-64-alice:~# ip link add name unet0 type unet local-entity 1.abcdef0 remote-entity 0.123456
+root@qemux86-64-alice:~# ip link set dev unet0 up
+root@qemux86-64-alice:~# ip route add 10.11.0.0/16 dev unet0
+root@qemux86-64-alice:~# ip address add 10.10.0.1/16 dev eth0
+```
+
+This creates a tunneling unet0 interface, installs a route at it (10.11.0.0/16) which also adding an alias address (10.10.0.1/16) on eth0.
+
+We can now ping the IP address of the other end; on instance #1.
+
+```
+root@qemux86-64-john:~# ping -c 1 10.10.0.1
+PING 10.10.0.1 (10.10.0.1): 56 data bytes
+64 bytes from 10.10.0.1: seq=0 ttl=64 time=78.127 ms
+
+--- 10.10.0.1 ping statistics ---
+1 packets transmitted, 1 packets received, 0% packet loss
+round-trip min/avg/max = 78.127/78.127/78.127 ms
+```
+
+While on instance #2
+
+```
+root@qemux86-64-alice:~# ping -c 1 10.11.0.1
+PING 10.11.0.1 (10.11.0.1): 56 data bytes
+64 bytes from 10.11.0.1: seq=0 ttl=64 time=68.493 ms
+
+--- 10.11.0.1 ping statistics ---
+1 packets transmitted, 1 packets received, 0% packet loss
+round-trip min/avg/max = 68.493/68.493/68.493 ms
 ```
