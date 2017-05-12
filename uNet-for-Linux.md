@@ -297,3 +297,29 @@ syslog messages redirected to the console should be similar to:
 [87056.178628] unet: cert 'Konsulko Group Intermediate CA: 2bae11210d44b635448f8064a5aa69c21989e7da' (#0) verifies against 'Konsulko Group: a23147d3a0c4879c5a18b83883fd4269171f2d37' (#1)
 ```
 
+Configure instance #1 as an entity named `0.123456`, forcing it to have `0.0` as a parent (meaning no parent) and installing it's certificate and private key.
+
+Create the entity
+```
+root@qemux86-64-john:~# mkdir /config/unet/entities/0.123456
+```
+
+Force it's parent
+```
+root@qemux86-64-john:~# echo 0.0 >/config/unet/entities/0.123456/force_parent 
+```
+
+Install the private key
+```
+root@qemux86-64-john:~# cat ~/unet-john.key.pkcs8.der >/config/unet/entities/0.123456/privkey 
+[87374.672773] unet: Loaded private key 'unet-0.123456'
+```
+
+Install the certificate
+```
+root@qemux86-64-john:~# cat ~/unet-john.cert.der >/config/unet/entities/0.123456/cert 
+[87396.993501] unet: Loaded X.509 cert 'Disrupter: unet-john: 2b63382d2357d5ad98989c901a3eb3c282919a1f'
+```
+
+Do the same at instance #2, configuring it as `1.abcdef0` but forcing the parent to be `0.123456`
+
