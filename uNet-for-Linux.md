@@ -16,3 +16,15 @@ This release supports:
 * Userspace AF_UNET socket supported for direct uNet communication.
 * Extensive debugging facilities, selected on runtime.
 
+## Certificate generation and signing
+
+* Follow this guide for setting up your own certificate signing authority: [OpenSSL Certificate Authority](https://jamielinux.com/docs/openssl-certificate-authority/index.html)
+
+* Write down the password of the intermediate authority certificate when you follow the guide.
+ 
+* We will need the certificates of the signing authorities (ca and intermediate) in DER form. By default PEM format certificates are generated, use the following snippet to convert to DER:
+    $ openssl x509 -outform der -in <filename>.cert.pem -out <filename>.cert.der
+
+
+After you have all the steps done use the following script to create and sign uNet certificates:
+
