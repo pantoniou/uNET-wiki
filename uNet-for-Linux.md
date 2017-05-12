@@ -253,9 +253,21 @@ And terminal #2 using:
 $ ./run-tap.sh 2
 ```
 
-You should get a long prompt at both terminals, the first one `qemux86-64-john` and the other `qemux86-64-alice`. John and Alice are the names of the entities we're going to create in each instance.
+You should get a login prompt at both terminals, the first one `qemux86-64-john` and the other `qemux86-64-alice`. John and Alice are the names of the entities we're going to create in each instance.
 
 Log in using root at both.
+
+Verify that unet support is built via:
+```
+root@qemux86-64-john:~# dmesg | grep unet
+[   44.501778] unet: Starting (0.1)
+[   44.503551] unet_socket_setup:
+[   44.578451] unet: crypto alg #0 (gcm(aes)) is available
+[   44.641540] unet: crypto alg #1 (authenc(hmac(sha256),ecb(aes))) is available
+[   44.643409] unet: crypto alg #2 (authenc(hmac(sha256),ecb(aes))) is available
+[   44.655089] unet_eth_bearer_register OK
+[   44.663296] unet: uNet activated
+```
 
 Verify that the following files exist in instance #1:
 ```
@@ -269,5 +281,19 @@ root@qemux86-64-alice:~# ls ca.cert.der intermediate.cert.der unet-alice.cert.de
 ca.cert.der               intermediate.cert.der     unet-alice.cert.der       unet-alice.key.pkcs8.der
 ```
 
+Install the trust chain certificates in the order that matches their signing order in both instances.
 
+```
+# cat ~/intermediate.cert.der ~/ca.cert.der >/config/unet/trust_chain
+```
+
+syslog messages redirected to the console should be similar to:
+```
+[87055.993832] unet: Loading uNet trust-chain certificates
+[87056.029466] unet: Loaded X.509 cert #0 'Konsulko Group Intermediate CA: 2bae11210d44b635448f8064a5aa69c21989e7da'
+[87056.129731] alg: No test for pkcs1pad(rsa,sha256) (pkcs1pad(rsa-generic,sha256))
+[87056.162346] unet: Loaded X.509 cert #1 'Konsulko Group: a23147d3a0c4879c5a18b83883fd4269171f2d37'
+[87056.164452] unet: Trust chain contains #2 keys - verifying trust.
+[87056.178628] unet: cert 'Konsulko Group Intermediate CA: 2bae11210d44b635448f8064a5aa69c21989e7da' (#0) verifies against 'Konsulko Group: a23147d3a0c4879c5a18b83883fd4269171f2d37' (#1)
+```
 
