@@ -125,3 +125,78 @@ sudo brctl delbr br0
 
 A number of scripts are provided that make booting the images easier:
 
+The runqemu-tap-bridge script runs QEMU making sure that the mac address used every time is the same (to avoid problems when getting DHCP addresses and ssh-ing in).
+
+```bash
+#!/bin/bash
+# runqemu-tap-bridge.sh
+function genmac {
+
+	local h=`hostname | md5sum | cut -f1 -d' '`
+	local t=`echo $1 | md5sum | cut -f1 -d' '`
+
+	local v0=`echo ${h} | cut -c1-2`
+	local v1=`echo ${h} | cut -c3-4`
+	local v2=`echo ${h} | cut -c5-6`
+	local v3=`echo ${t} | cut -c1-2`
+	local v4=`echo ${t} | cut -c3-4`
+	local v5=`echo ${t} | cut -c5-6`
+
+	local v=`printf "%d" 0x${v0}`
+
+	# turn off multicast bit 0
+	v=$((${v} & 254))
+	# turn on locally administered bit
+	v=$((${v} | 2))
+
+	v0=`printf "%02x" $v`
+
+	echo "$v0:$v1:$v2:$v3:$v4:$v5"
+}
+
+TAP=$1
+IMG=$2
+KERNEL=$3
+if test "x${TAP}" == x ; then
+	TAP=tap0
+fi
+
+if test "x${IMG}" == x ; then
+	IMG=core-image-minimal-qemux86-64-tap1.rootfs.ext4
+fi
+
+if test "x${KERNEL}" == x ; then
+	KERNEL=bzImage
+fi
+
+MAC=`genmac ${TAP}`
+
+echo "Tap device name : ${TAP}"
+echo "MAC address     : ${MAC}"
+echo "Image file      : ${IMG}"
+echo "Kernel image    : ${KERNEL}"
+
+# create interface if it doesn't exit
+/sbin/ifconfig >/dev/null 2>&1 ${TAP}
+if ! /sbin/ifconfig >/dev/null 2>&1 ${TAP} ; then
+	sudo tunctl -g `id -g` -t ${TAP}
+fi
+
+# QEMU="${HOME}/yocto/poky/build/tmp/sysroots/x86_64-linux/usr/bin/qemu-system-x86_64"
+# KERNEL_APPEND="root=/dev/vda rw highres=off console=ttyS0 mem=256M vga=0 uvesafb.mode_option=640x480-32 oprofile.timer=1 uvesafb.task_timeout=-1"
+# IFUP="${HOME}/yocto/poky/build/qemu_br0_ifup.sh"
+# IFDOWN="${HOME}/yocto/poky/build/qemu_br0_ifdown.sh"
+
+QEMU="${PWD}/tmp/sysroots/x86_64-linux/usr/bin/qemu-system-x86_64"
+KERNEL_APPEND="root=/dev/vda rw highres=off console=ttyS0 mem=256M vga=0 uvesafb.mode_option=640x480-32 oprofile.timer=1 uvesafb.task_timeout=-1"
+IFUP="${PWD}/qemu_br0_ifup.sh"
+IFDOWN="${PWD}/qemu_br0_ifdown.sh"
+set -x
+${QEMU} \
+	-nographic -cpu core2duo -m 256 \
+	-device virtio-net-pci,netdev=net0,mac=${MAC} \
+	-netdev tap,id=net0,ifname=${TAP},script=${IFUP},downscript=${IFDOWN} \
+	-drive file=${IMG},if=virtio,format=raw \
+	-vga vmware -show-cursor -usb -usbdevice tablet -device virtio-rng-pci \
+	-kernel ${KERNEL} -append "${KERNEL_APPEND}"
+```
