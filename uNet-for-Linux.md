@@ -81,7 +81,21 @@ It will put the public certificate and the private key in `intermediate/certs/un
 
 Get the yocto poky binary toolchain and qemu, and install it at the default directory `~/poky-sdk`
 ```
-$ wget http://downloads.yoctoproject.org/releases/yocto/yocto-2.2/toolchain/x86_64/poky-glibc-x86_64-core-image-minimal-core2-64-toolchain-ext-2.2.sh`
-$ chmod a+x poky-glibc-x86_64-core-image-minimal-core2-64-toolchain-ext-2.2.sh`
-$ ./poky-glibc-x86_64-core-image-minimal-core2-64-toolchain-ext-2.2.sh 
+$ wget http://downloads.yoctoproject.org/releases/yocto/yocto-2.2/toolchain/x86_64/poky-glibc-x86_64-core-image-minimal-core2-64-toolchain-ext-2.2.sh
+$ chmod a+x poky-glibc-x86_64-core-image-minimal-core2-64-toolchain-ext-2.2.sh
+$ ./poky-glibc-x86_64-core-image-minimal-core2-64-toolchain-ext-2.2.sh
 ```
+
+## uNet enabled Linux Kernel
+
+The following snipper gets and builds the kernel for qemu testing on x86.
+```
+$ git clone git@github.com:andymilburn/uNET-Linux.git linux
+$ cd linux
+$ git checkout --track -b unet-crypto origin/unet-crypto
+$ make unet_defconfig
+$ make -j 8 bzImage
+```
+
+The resulting kernel image is located in `arch/x86_64/boot/bzImage`
+
