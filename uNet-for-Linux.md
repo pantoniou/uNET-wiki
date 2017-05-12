@@ -200,3 +200,36 @@ ${QEMU} \
 	-vga vmware -show-cursor -usb -usbdevice tablet -device virtio-rng-pci \
 	-kernel ${KERNEL} -append "${KERNEL_APPEND}"
 ```
+
+This script uses the following interface up and interface down scripts which add and remove tap devices from the bridge we've created earlier:
+
+```bash
+#!/bin/bash
+#qemu_br0_ifup.sh
+switch=br0
+echo "$0: adding tap interface \"$1\" to bridge \"$switch\""
+sudo ifconfig $1 0.0.0.0 up
+sudo brctl addif ${switch} $1
+exit 0
+```
+
+```bash
+#!/bin/bash
+#qemu_br0_ifdown.sh
+switch=br0
+echo "$0: deleting tap interface \"$1\" from bridge \"$switch\""
+sudo brctl delif $switch $1
+sudo ifconfig $1 0.0.0.0 down
+exit 0
+```
+
+And finally a script that simply requires the number of the image to run:
+
+```bash
+#!/bin/bash
+#run-tap.sh
+set -x
+./runqemu-tap-bridge.sh tap${1} core-image-minimal-qemux86-64-tap${1}.ext4 bzImage
+```
+
+All of the scripts must be run from the `~/poky_sdk` directory we've installed yocto earlier.
