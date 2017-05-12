@@ -99,3 +99,29 @@ $ make -j 8 bzImage
 
 The resulting kernel image is located in `arch/x86_64/boot/bzImage`
 
+## Using the provided images with QEMU
+
+To ease testing a number of pre-made images with tools and configuration scripts have been provided.
+The images are used with qemu and the kernel compiled as described previously, and use tap interfaces to communicate over a bridge. The bridge assumed in the scripts is named `br0`.
+The name of the images are in the form `core-image-minimal-qemux86-64-tap<n>.ext4` where n is 1, 2, 3...
+
+The following scripts create and destroy the bridge; note that by default no communication is possible with the host, if you need that you will need to add on of the host's interfaces (i.e. `eth0` to the bridge).
+
+The `unet-create-bridge.sh` script that creates the bridge must be run before booting the images.
+```bash
+#!/bin/sh
+# unet-create-bridge.sh
+sudo brctl addbr br0
+sudo ifconfig br0 up
+```
+
+The `unet-destroy-bridge.sh` script may be run to clean up.
+```bash
+#!/bin/sh
+# unet-destroy-bridge.sh
+sudo ifconfig br0 down
+sudo brctl delbr br0
+```
+
+A number of scripts are provided that make booting the images easier:
+
