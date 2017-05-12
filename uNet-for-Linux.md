@@ -18,13 +18,70 @@ This release supports:
 
 ## Certificate generation and signing
 
-* Follow this guide for setting up your own certificate signing authority: [OpenSSL Certificate Authority](https://jamielinux.com/docs/openssl-certificate-authority/index.html)
+Before we begin, we will need to create certificates and a trust chain, please
+follow this guide for setting up your own certificate signing authority: [OpenSSL Certificate Authority](https://jamielinux.com/docs/openssl-certificate-authority/index.html)
 
-* Write down the password of the intermediate authority certificate when you follow the guide.
+Write down the password of the intermediate authority certificate when you follow the guide.
  
-* We will need the certificates of the signing authorities (ca and intermediate) in DER form. By default PEM format certificates are generated, use the following snippet to convert to DER:
-    $ openssl x509 -outform der -in <filename>.cert.pem -out <filename>.cert.der
+We will need the certificates of the signing authorities (ca and intermediate) in DER form. By default PEM format certificates are generated, use the following snippet to convert to DER:
 
+`$ openssl x509 -outform der -in <filename>.cert.pem -out <filename>.cert.der`
+
+The certificate files you will need to convert and keep are `certs/ca.cert.der` and `intermediate/certs/intermediate.cert.der`
 
 After you have all the steps done use the following script to create and sign uNet certificates:
+```bash
+#!/bin/sh
+# unet-entity-create.sh
+N=unet-$1
+echo "Creating private key for ${N}"
+openssl genrsa \
+	-out intermediate/private/${N}.key.pem 2048
+chmod 400 intermediate/private/${N}.key.pem
+openssl pkcs8 -in intermediate/private/${N}.key.pem \
+	-topk8 -nocrypt -outform DER \
+	-out intermediate/private/${N}.key.pkcs8.der
+chmod 400 intermediate/private/${N}.key.pkcs8.der
+echo
 
+echo "Creating certificate for ${N}"
+openssl req -config intermediate/openssl.cnf \
+	-key intermediate/private/${N}.key.pem \
+	-new -sha256 -out intermediate/csr/${N}.csr.pem \
+	-subj "/C=US/ST=California/L=Los Angeles/O=Disrupter/OU=uNet Project/CN=$1"
+echo
+
+echo "Signing certificate for ${N}"
+openssl ca -config intermediate/openssl.cnf \
+	-extensions server_cert -days 375 -notext -md sha256 \
+	-in intermediate/csr/${N}.csr.pem \
+	-out intermediate/certs/${N}.cert.pem
+chmod 444 intermediate/certs/${N}.cert.pem
+openssl x509 -outform der \
+	-in intermediate/certs/${N}.cert.pem \
+	-out intermediate/certs/${N}.cert.der
+chmod 444 intermediate/certs/${N}.cert.der
+echo
+
+echo "Verifying certificate for ${N}"
+openssl x509 -noout -text \
+	-in intermediate/certs/${N}.cert.pem
+openssl verify -CAfile intermediate/certs/ca-chain.cert.pem \
+      intermediate/certs/${N}.cert.pem
+echo
+```
+
+You can create a new cert and private key pair by executing in the root of the CA signing directory (i.e. `~/ca`)
+```
+$ ./create-unet-entity.sh bob
+```
+It will put the public certificate and the private key in `intermediate/certs/unet-bob.cert.der` and `intermediate/private/unet-bob.key.pkcs8.der` respectively.
+
+## Yocto binary toolchain setup
+
+Get the yocto poky binary toolchain and qemu, and install it at the default directory `~/poky-sdk`
+```
+$ wget http://downloads.yoctoproject.org/releases/yocto/yocto-2.2/toolchain/x86_64/poky-glibc-x86_64-core-image-minimal-core2-64-toolchain-ext-2.2.sh`
+$ chmod a+x poky-glibc-x86_64-core-image-minimal-core2-64-toolchain-ext-2.2.sh`
+$ ./poky-glibc-x86_64-core-image-minimal-core2-64-toolchain-ext-2.2.sh 
+```
