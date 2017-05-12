@@ -223,6 +223,12 @@ sudo ifconfig $1 0.0.0.0 down
 exit 0
 ```
 
+Please create a symbolic link to the bzImage first
+
+```
+# ln -s ~/linux/arch/x86_64/boot/bzImage ~/poky_sdk/
+```
+
 And finally a script that simply requires the number of the image to run:
 
 ```bash
@@ -737,3 +743,4 @@ PING 10.11.0.1 (10.11.0.1): 56 data bytes
 1 packets transmitted, 1 packets received, 0% packet loss
 round-trip min/avg/max = 68.493/68.493/68.493 ms
 ```
+
