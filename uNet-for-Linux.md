@@ -744,3 +744,45 @@ PING 10.11.0.1 (10.11.0.1): 56 data bytes
 round-trip min/avg/max = 68.493/68.493/68.493 ms
 ```
 
+## configfs options
+
+Configuration for unet is performed via the configfs filesystem.
+
+The root unet configuration directory is `/config/unet` and the available configuration options are:
+
+Timeouts
+
+* *apca\_timeout* Number of milliseconds to wait collecting APCA replies before moving to register. Default value is 500ms.
+* *apcr\_max\_timeout* Maximum timeout for exponential backoff of APCR messages. Default value is 250ms.
+* *apcr\_min\_timeout* Minimum timeout for exponential backoff of APCR messages. Default value is 30000ms (30 sec).
+* *child\_idle\_timeout* Period of inactivity until a child is moved to non-connected state. Default value is 30000ms (30 sec).
+* *housekeeping\_timeout* Period of housekeeping activity. Smaller values increase CPU time but increase fidelity. Default value is 1000ms (1 sec).
+* *keepalive\_period* Period after which we request a keepalive. Default value is 1000ms (1 sec).
+* *register\_timeout* Period after which we resend a register request. Default value is 500ms.
+* *reject\_backoff* Period of time we honor a previous register reject. Default value is 30000ms (30 sec).
+
+Counters
+
+* *keepalive\_max* Number of keepalives sent before declaring peer is unreachable. Default value is 3.
+* *register\_retries* Number of retries when sending a register message. Default value is 3.
+
+Boolean switches
+
+* *children\_count\_policy* If true, top bits of score is 32-log2(children-count). Default value is true.
+* *random\_score\_policy* If true, the lower 32 bits of score is randomly generated. If false it's a hash of the address of the sender. Default value is false.
+* *strict\_hierarchical\_routing* If true only communicate which attached peers (parent and children). If false any visible entity may be directly accessed. Default is true. Note that encryption requires this to be true.
+* *force\_relay\_da\_upstream* If true forward DAs even from known originators. Default is false.
+* *force\_relay\_rfdr\_upstream* If true forward RFDRs even from known originators. Default is false.
+* *only\_forward\_from\_valid\_senders* If true, only forward from valid senders. Default is true.
+* *relay\_disconnect\_announce\_upstream* If true, forward all DAs upstream. Default is false.
+* *try\_reconnect\_to\_children* If true, send reconnect to all children when entity is registered. Default is true.
+
+Trust certicates
+* *trust\_chain* The trust chain of the host. Default is empty.
+
+Entities are created by issuing mkdir in the `entities/` directory.
+
+Valid configuration options of the entity are:
+
+
+All other not listed attributes are for debugging purposes only and may be removed at any time.
